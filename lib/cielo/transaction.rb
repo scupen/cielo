@@ -1,11 +1,11 @@
 #encoding: utf-8
 module Cielo
   class Transaction
-    
+
     def initialize
       @connection = Cielo::Connection.new
     end
-    
+
     # inicia uma nova transação para processamento Buy Page Cielo
     def create!(parameters={})
       create_parameters(parameters)
@@ -30,7 +30,7 @@ module Cielo
       end
       make_request! message
     end
-    
+
     # requisição do TID, inicia a transação para efetuar uma autorização direta - Buy Page Loja
     def request_tid!(parameters={})
       message = xml_builder("requisicao-tid") do |xml|
@@ -46,7 +46,7 @@ module Cielo
       end
       make_request! message
     end
-    
+
     # efetua a autorização direta passando todos os dados da transação - Buy Page Loja
     def direct_auth!(parameters={})
       auth_parameters(parameters)
@@ -58,7 +58,7 @@ module Cielo
         end
         xml.tag!("dados-cartao") do
           [:numero, :validade, :indicador, :"codigo-seguranca", :"nome-portador"].each do |key|
-            #if key == :numero then            
+            #if key == :numero then
             #  xml.tag!(key.to_s, parameters[:numcartao].to_s)
             #else
             xml.tag!(key.to_s, parameters[("cartao-" + key.to_s).to_sym].to_s)
@@ -79,7 +79,7 @@ module Cielo
       end
       make_request! message
     end
-    
+
     # efetua uma consulta e obtem os dados da transação
     def verify!(cielo_tid)
       return nil unless cielo_tid
@@ -92,22 +92,23 @@ module Cielo
       end
       make_request! message
     end
-    
+
     # captura uma transação que já esteja autorizada
     def catch!(cielo_tid)
       return nil unless cielo_tid
       message = xml_builder("requisicao-captura") do |xml|
+				xml.tid "#{cielo_tid}"
+
         xml.tag!("dados-ec") do
           xml.numero Cielo.numero_afiliacao
           xml.chave Cielo.chave_acesso
         end
-        xml.tid "#{cielo_tid}"
       end
       make_request! message
     end
-    
+
     private
-    
+
     # verifica os parametros para iniciar uma nova transação
     def create_parameters(parameters={})
       [:numero, :valor, :bandeira].each do |parameter|
@@ -123,7 +124,7 @@ module Cielo
       parameters.merge!(:"url-retorno" => Cielo.return_path) unless parameters[:"url-retorno"]
       parameters
     end
-    
+
     # verifica os parametros para efetuar uma autorização direta
     def auth_parameters(parameters={})
       create_parameters(parameters)
@@ -133,19 +134,19 @@ module Cielo
       parameters.merge!(:"cartao-indicador" => "1") unless parameters[:"cartao-indicador"]
       parameters
     end
-    
+
     # gera xml para as requisições ao webservice
     def xml_builder(group_name, &block)
       xml = Builder::XmlMarkup.new(:indent => 2)
       xml.instruct! :xml, :version => "1.0", :encoding => "ISO-8859-1"
       xml.tag!(group_name, :id => "#{Time.now.to_i}", :versao => "1.1.0") do
         #block.call(xml) if target == :before
-        
+
         block.call(xml) # if target == :after
-      end 
+      end
       xml
     end
-    
+
     # efetua requisição ao webservice
     def make_request!(message)
       #message.target!
@@ -153,7 +154,7 @@ module Cielo
       result = @connection.request! params
       parse_response(result)
     end
-    
+
     # obtém o retorno do webservice em XML
     def parse_response(response)
       case response
@@ -164,7 +165,7 @@ module Cielo
         {:erro => { :codigo => "000", :mensagem => "Impossível conectar ao servidor"}}
       end
     end
-    
+
     # trata o retorno do webservice tranformando o XML em Hash
     def parse_elements(elements)
       map={}
@@ -177,6 +178,6 @@ module Cielo
       end
       map.symbolize_keys
     end
-    
+
   end
 end
