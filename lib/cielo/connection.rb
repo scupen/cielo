@@ -5,7 +5,8 @@ module Cielo
       @environment = eval(Cielo.environment.to_s.capitalize)
       port = 443
       @http = Net::HTTP.new(@environment::BASE_URL,port)
-      @http.use_ssl = false
+      @http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      @http.use_ssl = true
       @http.open_timeout = 10*1000
       @http.read_timeout = 40*1000
     end
